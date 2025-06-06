@@ -1,31 +1,30 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline';">
-  <title>IXL Score Extension</title>
-  <link rel="stylesheet" type="text/css" href="styles.css">
+  <title>IXL Score</title>
+  <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-  <div class="container" role="main">
-    <header>
-      <h1>IXL Score Extension</h1>
-    </header>
-    <main>
-      <div id="score-display" aria-live="polite">
-        <p>Current Score: <span id="current-score" aria-label="Current IXL score">0</span></p>
-      </div>
-      <div id="controls">
-        <button id="refresh-score" aria-label="Refresh current score">
-          <span>Refresh Score</span>
-        </button>
-      </div>
-    </main>
-    <footer>
-      <p class="status" id="status-message" aria-live="polite"></p>
-    </footer>
+  <h1>Your iXL Score on Page</h1>
+  <div id="total-score-display">
+    <div id="current-score">Loading...</div>
+    <div class="score-label">Total Points</div>
   </div>
-  <script src="popup.js" type="module"></script>
+  <div id="points-summary">
+    <div class="points-gained">
+      <div id="points-gained-value" class="score-value">0</div>
+      <div class="score-label">Points Gained</div>
+    </div>
+    <div class="points-lost">
+      <div id="points-lost-value" class="score-value">0</div>
+      <div class="score-label">Points Lost</div>
+    </div>
+  </div>
+  <div id="controls">
+    
+  </div>
+  <script src="popup.js"></script>
 </body>
 </html> 

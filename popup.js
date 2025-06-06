@@ -1,101 +1,120 @@
 // Constants
-const STORAGE_KEY = 'ixlScore';
-const STATUS_MESSAGE_TIMEOUT = 3000;
+const STORAGE_KEY_TOTAL = 'ixlTotalScore';
+const STORAGE_KEY_GAINED = 'ixlPointsGained';
+const STORAGE_KEY_LOST = 'ixlPointsLost';
+const TARGET_URL_PATTERN = 'https://au.ixl.com/analytics/progress-and-improvement';
+const NOT_IXL_MESSAGE = 'This plugin only works with iXL.com website';
 
 // DOM Elements
-const elements = {
-  currentScore: document.getElementById('current-score'),
-  refreshButton: document.getElementById('refresh-score'),
-  statusMessage: document.getElementById('status-message')
-};
+const totalScoreElement = document.getElementById('current-score');
+const pointsGainedElement = document.getElementById('points-gained-value');
+const pointsLostElement = document.getElementById('points-lost-value');
 
-// Utility functions
-const showStatusMessage = (message, isError = false) => {
-  elements.statusMessage.textContent = message;
-  elements.statusMessage.className = `status ${isError ? 'error' : 'success'}`;
-  setTimeout(() => {
-    elements.statusMessage.textContent = '';
-    elements.statusMessage.className = 'status';
-  }, STATUS_MESSAGE_TIMEOUT);
-};
+// Function to update the score display or show a message
+const updateDisplay = (type, value) => {
+  switch (type) {
+    case 'score':
+      const { total, gained, lost } = value;
+      // Format numbers for human readability
+      const formattedTotal = parseInt(total).toLocaleString() || 'N/A';
+      const formattedGained = parseInt(gained).toLocaleString() || '0';
+      const formattedLost = parseInt(lost).toLocaleString() || '0';
 
-const updateScoreDisplay = (score) => {
-  elements.currentScore.textContent = score || '0';
-  elements.currentScore.setAttribute('aria-label', `Current IXL score: ${score || '0'}`);
-};
+      totalScoreElement.textContent = formattedTotal;
+      pointsGainedElement.textContent = formattedGained;
+      pointsLostElement.textContent = formattedLost;
 
-// Storage operations
-const getStoredScore = async () => {
-  try {
-    const result = await chrome.storage.local.get([STORAGE_KEY]);
-    return result[STORAGE_KEY] || '0';
-  } catch (error) {
-    console.error('Error reading from storage:', error);
-    showStatusMessage('Error reading score from storage', true);
-    return '0';
+      document.getElementById('total-score-display').style.display = '';
+      document.getElementById('points-summary').style.display = '';
+      totalScoreElement.style.fontSize = '48px'; // Restore score font size
+      totalScoreElement.style.color = '#98c379'; // Restore score color
+      break;
+    case 'message':
+      totalScoreElement.textContent = value;
+      totalScoreElement.style.fontSize = '16px'; // Adjust font size for message
+      totalScoreElement.style.color = '#abb2bf'; // Adjust color for message
+      document.getElementById('total-score-display').style.display = ''; // Keep the main display area
+      document.getElementById('points-summary').style.display = 'none'; // Hide detailed scores
+      break;
+    case 'loading':
+       totalScoreElement.textContent = 'Loading...';
+       totalScoreElement.style.fontSize = '16px';
+       totalScoreElement.style.color = '#abb2bf';
+       document.getElementById('points-summary').style.display = 'none';
+       break;
   }
 };
 
-const setStoredScore = async (score) => {
-  try {
-    await chrome.storage.local.set({ [STORAGE_KEY]: score });
-  } catch (error) {
-    console.error('Error writing to storage:', error);
-    showStatusMessage('Error saving score to storage', true);
-  }
+// Utility function to check if the URL is the target page
+const isTargetPage = (url) => {
+  return url && url.startsWith(TARGET_URL_PATTERN);
 };
 
-// Message handling
-const handleMessage = (request, sender, sendResponse) => {
-  if (request.action === "updateScore") {
-    updateScoreDisplay(request.score);
-    setStoredScore(request.score);
-    showStatusMessage('Score updated successfully');
-  }
-};
+// Function to send a ping to the content script to check readiness (not needed with port messaging for initial load)
+// const pingContentScript = (tabId) => { /* ... */ };
 
-// Event handlers
-const handleRefreshClick = async () => {
-  try {
-    elements.refreshButton.disabled = true;
-    showStatusMessage('Refreshing score...');
-    
-    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-    if (!tab) {
-      throw new Error('No active tab found');
+// Function to send message with retry logic (can keep for other potential uses, but not initial score load)
+// const sendMessageWithRetry = (tabId, message, retries = 5, delay = 200) => { /* ... */ };
+
+// Load initial scores from storage and establish connection to content script
+document.addEventListener('DOMContentLoaded', () => {
+  console.log('Popup: DOMContentLoaded fired.'); // Log at the start of the listener
+  chrome.tabs.query({active: true, currentWindow: true}, (tabs) => {
+    console.log('Popup: chrome.tabs.query result:', tabs); // Log the result of the query
+    const activeTab = tabs[0];
+
+    // Check if we are on the target page
+    if (activeTab && activeTab.id && activeTab.url && isTargetPage(activeTab.url)) {
+      console.log('Popup opened on target IXL page. Attempting to connect to content script.');
+
+      // Connect to the content script in the active tab
+      const port = chrome.tabs.connect(activeTab.id, { name: "popup" });
+      console.log('Popup: Initiated port connection.', port);
+
+      // Listen for messages on the port
+      port.onMessage.addListener((request) => {
+        console.log('Popup: Received message on port:', request);
+        if (request.action === "updateScore") {
+          console.log('Popup: Processing updateScore message.', request.scores);
+           const { total, gained, lost } = request.scores;
+           updateDisplay('score', { total, gained, lost });
+           // Save the updated scores to storage
+           chrome.storage.local.set({
+             [STORAGE_KEY_TOTAL]: total,
+             [STORAGE_KEY_GAINED]: gained,
+             [STORAGE_KEY_LOST]: lost
+           });
+        }
+      });
+
+      // Handle disconnection
+      port.onDisconnect.addListener(() => {
+        console.log('Popup: Port disconnected.');
+        // You might want to update the UI to reflect disconnection if necessary
+      });
+
+      // Always try to load from storage first for quicker initial display
+      chrome.storage.local.get([STORAGE_KEY_TOTAL, STORAGE_KEY_GAINED, STORAGE_KEY_LOST], (result) => {
+        const total = result[STORAGE_KEY_TOTAL] || 'N/A'; // Show N/A if no stored score
+        const gained = result[STORAGE_KEY_GAINED] || '0';
+        const lost = result[STORAGE_KEY_LOST] || '0';
+        // Only update if there's stored data, otherwise show loading initially
+        if (result[STORAGE_KEY_TOTAL] !== undefined) {
+             updateDisplay('score', { total, gained, lost });
+        } else {
+             // Show loading state if no stored data
+            updateDisplay('loading');
+        }
+      });
+
+    } else {
+      console.log('Popup opened on a non-target page or active tab/URL missing.');
+      // On a non-target page, hide score details and show the message
+      updateDisplay('message', NOT_IXL_MESSAGE);
+      document.getElementById('points-summary').style.display = 'none';
     }
+  });
+});
 
-    await chrome.tabs.sendMessage(tab.id, { action: "refreshScore" });
-  } catch (error) {
-    console.error('Error refreshing score:', error);
-    showStatusMessage('Error refreshing score', true);
-  } finally {
-    elements.refreshButton.disabled = false;
-  }
-};
-
-// Initialize
-const initialize = async () => {
-  try {
-    // Load initial score
-    const initialScore = await getStoredScore();
-    updateScoreDisplay(initialScore);
-
-    // Set up event listeners
-    elements.refreshButton.addEventListener('click', handleRefreshClick);
-    chrome.runtime.onMessage.addListener(handleMessage);
-
-    // Check if we're on an IXL page
-    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-    if (!tab.url.includes('ixl.com')) {
-      showStatusMessage('Please navigate to an IXL page to use this extension', true);
-      elements.refreshButton.disabled = true;
-    }
-  } catch (error) {
-    console.error('Error initializing popup:', error);
-    showStatusMessage('Error initializing extension', true);
-  }
-};
-
-// Start the extension
-document.addEventListener('DOMContentLoaded', initialize); 
+// Removed: Old chrome.runtime.onMessage.addListener for updateScore. Now using port messaging.
+// chrome.runtime.onMessage.addListener((request, sender, sendResponse) => { /* ... */ }); 
