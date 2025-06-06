@@ -1,7 +1,4 @@
 // Constants
-const STORAGE_KEY_TOTAL = 'ixlTotalScore';
-const STORAGE_KEY_GAINED = 'ixlPointsGained';
-const STORAGE_KEY_LOST = 'ixlPointsLost';
 const TARGET_URL_PATTERN = 'https://au.ixl.com/analytics/progress-and-improvement';
 const NOT_IXL_MESSAGE = 'This plugin only works with iXL.com website';
 
@@ -10,19 +7,52 @@ const totalScoreElement = document.getElementById('current-score');
 const pointsGainedElement = document.getElementById('points-gained-value');
 const pointsLostElement = document.getElementById('points-lost-value');
 
+// Function to animate a number count up with stronger ease-out effect
+const animateNumber = (element, start, end, duration) => {
+  const range = end - start;
+  const startTime = performance.now();
+
+  const step = (currentTime) => {
+    const elapsed = currentTime - startTime;
+    let progress = Math.min(elapsed / duration, 1);
+
+    // Apply a stronger ease-out quintic function for more dramatic slowdown
+    // Source: https://easings.net/#easeOutQuint
+    progress = 1 - Math.pow(1 - progress, 5);
+
+    const currentValue = start + (range * progress);
+
+    // Update text content with current value and formatting
+    element.textContent = Math.floor(currentValue).toLocaleString();
+
+    if (elapsed < duration) {
+      requestAnimationFrame(step);
+    }
+  };
+
+  requestAnimationFrame(step);
+};
+
 // Function to update the score display or show a message
 const updateDisplay = (type, value) => {
   switch (type) {
     case 'score':
       const { total, gained, lost } = value;
-      // Format numbers for human readability
-      const formattedTotal = parseInt(total).toLocaleString() || 'N/A';
-      const formattedGained = parseInt(gained).toLocaleString() || '0';
-      const formattedLost = parseInt(lost).toLocaleString() || '0';
+      
+      // Animate Total Points
+      const currentTotal = parseInt(totalScoreElement.textContent.replace(/,/g, '')) || 0; // Get current displayed number, remove commas
+      const targetTotal = parseInt(total);
+      const animationDuration = 1500; // 1.5 seconds
+      
+      if (!isNaN(targetTotal)) {
+         animateNumber(totalScoreElement, currentTotal, targetTotal, animationDuration);
+      } else {
+         totalScoreElement.textContent = total || 'N/A'; // Fallback if total is not a valid number
+      }
 
-      totalScoreElement.textContent = formattedTotal;
-      pointsGainedElement.textContent = formattedGained;
-      pointsLostElement.textContent = formattedLost;
+      // Update Gained and Lost points directly (no animation for simplicity)
+      pointsGainedElement.textContent = parseInt(gained).toLocaleString() || '0';
+      pointsLostElement.textContent = parseInt(lost).toLocaleString() || '0';
 
       document.getElementById('total-score-display').style.display = '';
       document.getElementById('points-summary').style.display = '';
@@ -50,17 +80,17 @@ const isTargetPage = (url) => {
   return url && url.startsWith(TARGET_URL_PATTERN);
 };
 
-// Function to send a ping to the content script to check readiness (not needed with port messaging for initial load)
+// Function to send a ping to the content script to check readiness (not needed with port messaging)
 // const pingContentScript = (tabId) => { /* ... */ };
 
-// Function to send message with retry logic (can keep for other potential uses, but not initial score load)
+// Function to send message with retry logic (can keep for other potential uses)
 // const sendMessageWithRetry = (tabId, message, retries = 5, delay = 200) => { /* ... */ };
 
-// Load initial scores from storage and establish connection to content script
+// Establish connection to content script and set up message listener
 document.addEventListener('DOMContentLoaded', () => {
-  console.log('Popup: DOMContentLoaded fired.'); // Log at the start of the listener
+  console.log('Popup: DOMContentLoaded fired.');
   chrome.tabs.query({active: true, currentWindow: true}, (tabs) => {
-    console.log('Popup: chrome.tabs.query result:', tabs); // Log the result of the query
+    console.log('Popup: chrome.tabs.query result:', tabs);
     const activeTab = tabs[0];
 
     // Check if we are on the target page
@@ -78,12 +108,8 @@ document.addEventListener('DOMContentLoaded', () => {
           console.log('Popup: Processing updateScore message.', request.scores);
            const { total, gained, lost } = request.scores;
            updateDisplay('score', { total, gained, lost });
-           // Save the updated scores to storage
-           chrome.storage.local.set({
-             [STORAGE_KEY_TOTAL]: total,
-             [STORAGE_KEY_GAINED]: gained,
-             [STORAGE_KEY_LOST]: lost
-           });
+           // Removed: Save the updated scores to storage
+           // chrome.storage.local.set({ /* ... */ });
         }
       });
 
@@ -93,19 +119,8 @@ document.addEventListener('DOMContentLoaded', () => {
         // You might want to update the UI to reflect disconnection if necessary
       });
 
-      // Always try to load from storage first for quicker initial display
-      chrome.storage.local.get([STORAGE_KEY_TOTAL, STORAGE_KEY_GAINED, STORAGE_KEY_LOST], (result) => {
-        const total = result[STORAGE_KEY_TOTAL] || 'N/A'; // Show N/A if no stored score
-        const gained = result[STORAGE_KEY_GAINED] || '0';
-        const lost = result[STORAGE_KEY_LOST] || '0';
-        // Only update if there's stored data, otherwise show loading initially
-        if (result[STORAGE_KEY_TOTAL] !== undefined) {
-             updateDisplay('score', { total, gained, lost });
-        } else {
-             // Show loading state if no stored data
-            updateDisplay('loading');
-        }
-      });
+      // Show loading state initially
+      updateDisplay('loading');
 
     } else {
       console.log('Popup opened on a non-target page or active tab/URL missing.');
@@ -116,5 +131,5 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 });
 
-// Removed: Old chrome.runtime.onMessage.addListener for updateScore. Now using port messaging.
+// Removed: Old chrome.runtime.onMessage.addListener
 // chrome.runtime.onMessage.addListener((request, sender, sendResponse) => { /* ... */ }); 

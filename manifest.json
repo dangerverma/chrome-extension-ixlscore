@@ -5,7 +5,6 @@
   "description": "A Chrome extension for tracking IXL Analytics Progress and Improvement scores.",
   "minimum_chrome_version": "88",
   "permissions": [
-    "storage",
     "activeTab",
     "scripting"
   ],
