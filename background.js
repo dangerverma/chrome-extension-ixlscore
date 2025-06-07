@@ -1,13 +1,13 @@
 // Minimal background service worker
 console.log('IXL Score Extension background service worker active.');
 
-// Target URL pattern for the IXL analytics page
-const TARGET_URL_PATTERN = 'https://au.ixl.com/analytics/progress-and-improvement';
+// Target URL pattern for the IXL analytics, maths, english, and science pages
+const TARGET_URL_PATTERN = 'https://au.ixl.com/(analytics/progress-and-improvement|maths|english|science)*';
 
 // Listen for tab updates
 chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
   // Check if the tab has finished loading and the URL matches the target pattern
-  if (changeInfo.status === 'complete' && tab.url && tab.url.startsWith(TARGET_URL_PATTERN)) {
+  if (changeInfo.status === 'complete' && tab.url && tab.url.match(new RegExp(TARGET_URL_PATTERN))) {
     console.log(`Background script: Tab ${tabId} updated to target page. Injecting content script.`);
 
     // Inject the content script into the updated tab

@@ -1,5 +1,11 @@
 // Constants
-const TARGET_URL_PATTERN = 'https://au.ixl.com/analytics/progress-and-improvement';
+const IXL_ANALYTICS_PATTERN = 'https://au.ixl.com/analytics/progress-and-improvement';
+const IXL_MATHS_PATTERN = 'https://au.ixl.com/maths';
+const IXL_ENGLISH_PATTERN = 'https://au.ixl.com/english';
+const IXL_SCIENCE_PATTERN = 'https://au.ixl.com/science';
+const SKILL_EXERCISE_SELECTOR = 'span.skill-tree-skill-name';
+const IMPROVEMENT_CONTAINER_SELECTOR = '.improvement-container';
+const SCORE_SELECTOR = '.score';
 
 // IMPORTANT: Replace these placeholder selectors with the actual selectors found on the IXL page.
 // You can use Chrome DevTools (F12) to inspect the page elements and find their unique selectors.
@@ -14,15 +20,26 @@ const SCORE_SELECTORS = {
   scoreCells: '.progress-table td.score-cell' // Selector for individual score cells within the table
 };
 
-// Function to calculate scores from improvement containers
-const calculateScores = () => {
-  const improvementContainers = document.querySelectorAll('.improvement-container');
+// Function to determine the current IXL page type
+const getPageType = () => {
+  const url = window.location.href;
+  if (url.startsWith(IXL_ANALYTICS_PATTERN)) {
+    return 'analytics';
+  } else if (url.startsWith(IXL_MATHS_PATTERN) || url.startsWith(IXL_ENGLISH_PATTERN) || url.startsWith(IXL_SCIENCE_PATTERN)) {
+    return 'subject_skills';
+  }
+  return 'unknown';
+};
+
+// Function to calculate scores from improvement containers (for analytics page)
+const calculateAnalyticsScores = () => {
+  const improvementContainers = document.querySelectorAll(IMPROVEMENT_CONTAINER_SELECTOR);
   let totalPoints = 0;
   let pointsGained = 0;
   let pointsLost = 0;
   
   improvementContainers.forEach(container => {
-    const scores = container.querySelectorAll('.score');
+    const scores = container.querySelectorAll(SCORE_SELECTOR);
     if (scores.length === 2) {
       const startScore = parseInt(scores[0].textContent);
       const endScore = parseInt(scores[1].textContent);
@@ -39,10 +56,31 @@ const calculateScores = () => {
   });
 
   return {
+    type: 'score_data',
     total: totalPoints.toString(),
     gained: pointsGained.toString(),
     lost: pointsLost.toString()
   };
+};
+
+// Function to calculate total exercises (for subject pages)
+const calculateTotalExercises = () => {
+  const skillElements = document.querySelectorAll(SKILL_EXERCISE_SELECTOR);
+  return {
+    type: 'exercise_data',
+    totalExercises: skillElements.length.toString()
+  };
+};
+
+// Unified function to get data based on page type
+const getDataForPage = () => {
+  const pageType = getPageType();
+  if (pageType === 'analytics') {
+    return calculateAnalyticsScores();
+  } else if (pageType === 'subject_skills') {
+    return calculateTotalExercises();
+  }
+  return { type: 'error', message: 'Not an IXL analytics or subject skills page.' };
 };
 
 // Utility functions
@@ -53,26 +91,32 @@ const validateScore = (score) => {
 };
 
 const isTargetPage = () => {
-  return window.location.href.startsWith(TARGET_URL_PATTERN);
+  // This function is mainly for background script to check general target URLs
+  // For content script, we use getPageType for more specific logic.
+  const url = window.location.href;
+  return url.startsWith(IXL_ANALYTICS_PATTERN) ||
+         url.startsWith(IXL_MATHS_PATTERN) ||
+         url.startsWith(IXL_ENGLISH_PATTERN) ||
+         url.startsWith(IXL_SCIENCE_PATTERN);
 };
 
-// Function to send scores to the popup
-const sendScoresToPopup = (scores) => {
+// Function to send data to the popup (now sends different types of data)
+const sendDataToPopup = (data) => {
   chrome.runtime.sendMessage({
-    action: "updateScore",
-    scores: scores
+    action: "updateDisplayData", // Renamed action for clarity
+    data: data
   });
 };
 
-// Function to send score to the background script (optional, keeping for structure)
-const sendScoresToBackground = (scores) => {
+// Function to send data to the background script (optional, keeping for structure)
+const sendDataToBackground = (data) => {
   chrome.runtime.sendMessage({
-    action: "logScore", // Example action
-    scores: scores
+    action: "logData", // Example action
+    data: data
   });
 };
 
-// Listen for messages from the popup or background script
+// Listen for messages from the popup or background script (mostly for 'ping' now)
 console.log('Content script: Adding message listener.');
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   console.log('Content script: Message received:', request);
@@ -81,57 +125,52 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === "ping") {
     console.log('Content script: Received ping request.');
     sendResponse({ success: true, status: 'ready' });
-    return true; // Indicate that sendResponse will be called asynchronously
+    return true; 
   }
 
+  // The refreshScore action will now trigger a full data re-calculation and send
   if (request.action === "refreshScore") {
-    console.log('IXL Score Extension: Score refresh requested.');
-    const scores = calculateScores();
-    sendScoresToPopup(scores);
-    sendScoresToBackground(scores);
-    sendResponse({ success: true, scores: scores });
-    return true; // Keep message channel open for sendResponse
+    console.log('IXL Score Extension: Refresh requested. Recalculating data.');
+    const data = getDataForPage();
+    sendDataToPopup(data);
+    sendDataToBackground(data);
+    sendResponse({ success: true, data: data });
+    return true; 
   }
 });
 
 // Listen for connections from the popup
 chrome.runtime.onConnect.addListener((port) => {
   console.log('Content script: Port connected:', port.name);
-  // Check if the connection is from the popup
   if (port.name === "popup") {
-    console.log('Content script: Popup connected, sending initial scores.');
-    // Calculate current scores and send them immediately through the port
-    const currentScores = calculateScores();
-    port.postMessage({ action: "updateScore", scores: currentScores });
-
-    // Optional: Add a listener for messages from the popup on this port if needed later
-    // port.onMessage.addListener((msg) => { /* ... */ });
-
-    // Optional: Handle port disconnection
-    // port.onDisconnect.addListener(() => { console.log('Content script: Popup disconnected.'); });
+    console.log('Content script: Popup connected, sending initial data.');
+    // Calculate current data and send it immediately through the port
+    const currentData = getDataForPage();
+    port.postMessage({ action: "updateDisplayData", data: currentData });
   }
 });
 
 // Initial action when content script loads on the target page
-// Removed: Automatic initial score send here. Will send on popup connection instead.
 document.addEventListener('DOMContentLoaded', () => {
   console.log('Content script: DOMContentLoaded fired.');
   if (isTargetPage()) {
     console.log('IXL Score Extension: Content script loaded on target page.');
     try {
-      // Removed: Initial score calculation and send on DOMContentLoaded.
-      // Scores will now be sent when the popup connects.
+      // Initial data calculation and send. This also covers the case where popup is not yet open.
+      const initialData = getDataForPage();
+      sendDataToPopup(initialData);
+      sendDataToBackground(initialData);
 
-      // Set up a MutationObserver to watch for changes in the improvement containers
+      // Set up a MutationObserver to watch for changes in relevant containers
       console.log('Content script: Setting up MutationObserver.');
       const observer = new MutationObserver((mutations) => {
-        console.log('Content script: DOM mutations detected.');
-        const scores = calculateScores();
-        sendScoresToPopup(scores);
-        sendScoresToBackground(scores);
+        console.log('Content script: DOM mutations detected. Recalculating data.');
+        const newData = getDataForPage();
+        sendDataToPopup(newData);
+        sendDataToBackground(newData);
       });
 
-      // Start observing the document with the configured parameters
+      // Observe the body for changes (as skills/scores can appear anywhere)
       observer.observe(document.body, {
         childList: true,
         subtree: true
@@ -143,6 +182,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
   } else {
-    console.log('IXL Score Extension: Content script loaded, but not on the target page.');
+    console.log('IXL Score Extension: Content script loaded, but not on a target page.');
   }
 }); 

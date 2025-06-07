@@ -1,5 +1,8 @@
 // Constants
-const TARGET_URL_PATTERN = 'https://au.ixl.com/analytics/progress-and-improvement';
+const IXL_ANALYTICS_PATTERN = 'https://au.ixl.com/analytics/progress-and-improvement';
+const IXL_MATHS_ROOT = 'https://au.ixl.com/maths';
+const IXL_ENGLISH_ROOT = 'https://au.ixl.com/english';
+const IXL_SCIENCE_ROOT = 'https://au.ixl.com/science';
 const NOT_IXL_MESSAGE = 'This plugin only works with iXL.com website';
 
 // DOM Elements
@@ -40,14 +43,14 @@ const updateDisplay = (type, value) => {
       const { total, gained, lost } = value;
       
       // Animate Total Points
-      const currentTotal = parseInt(totalScoreElement.textContent.replace(/,/g, '')) || 0; // Get current displayed number, remove commas
+      const currentTotal = parseInt(totalScoreElement.textContent.replace(/,/g, '')) || 0;
       const targetTotal = parseInt(total);
-      const animationDuration = 1500; // 1.5 seconds
+      const animationDuration = 1500;
       
       if (!isNaN(targetTotal)) {
          animateNumber(totalScoreElement, currentTotal, targetTotal, animationDuration);
       } else {
-         totalScoreElement.textContent = total || 'N/A'; // Fallback if total is not a valid number
+         totalScoreElement.textContent = total || 'N/A';
       }
 
       // Update Gained and Lost points directly (no animation for simplicity)
@@ -56,28 +59,57 @@ const updateDisplay = (type, value) => {
 
       document.getElementById('total-score-display').style.display = '';
       document.getElementById('points-summary').style.display = '';
-      totalScoreElement.style.fontSize = '48px'; // Restore score font size
-      totalScoreElement.style.color = '#98c379'; // Restore score color
+      totalScoreElement.style.fontSize = '3.5em';
+      totalScoreElement.style.color = '#2ecc71';
+      document.getElementById('total-score-label').textContent = 'Total Points';
+      break;
+    case 'exercises':
+      const { totalExercises } = value;
+      
+      // Animate Total Exercises (similar to Total Points)
+      const currentExercises = parseInt(totalScoreElement.textContent.replace(/,/g, '')) || 0;
+      const targetExercises = parseInt(totalExercises);
+      const exerciseAnimationDuration = 1500;
+
+      if (!isNaN(targetExercises)) {
+        animateNumber(totalScoreElement, currentExercises, targetExercises, exerciseAnimationDuration);
+      } else {
+        totalScoreElement.textContent = totalExercises || 'N/A';
+      }
+
+      // Hide points summary as it's not relevant for exercises
+      document.getElementById('points-summary').style.display = 'none';
+      document.getElementById('total-score-display').style.display = '';
+      totalScoreElement.style.fontSize = '3.5em';
+      totalScoreElement.style.color = '#3498db';
+      document.getElementById('total-score-label').textContent = 'Total Exercises';
       break;
     case 'message':
       totalScoreElement.textContent = value;
-      totalScoreElement.style.fontSize = '16px'; // Adjust font size for message
-      totalScoreElement.style.color = '#abb2bf'; // Adjust color for message
-      document.getElementById('total-score-display').style.display = ''; // Keep the main display area
-      document.getElementById('points-summary').style.display = 'none'; // Hide detailed scores
+      totalScoreElement.style.fontSize = '1em';
+      totalScoreElement.style.color = '#bdc3c7';
+      document.getElementById('total-score-display').style.display = '';
+      document.getElementById('points-summary').style.display = 'none';
+      document.getElementById('total-score-label').textContent = '';
       break;
     case 'loading':
        totalScoreElement.textContent = 'Loading...';
-       totalScoreElement.style.fontSize = '16px';
-       totalScoreElement.style.color = '#abb2bf';
+       totalScoreElement.style.fontSize = '1em';
+       totalScoreElement.style.color = '#bdc3c7';
        document.getElementById('points-summary').style.display = 'none';
+       document.getElementById('total-score-label').textContent = '';
        break;
   }
 };
 
-// Utility function to check if the URL is the target page
+// Utility function to check if the URL is a target page for the popup
 const isTargetPage = (url) => {
-  return url && url.startsWith(TARGET_URL_PATTERN);
+  return url && (
+    url.startsWith(IXL_ANALYTICS_PATTERN) ||
+    url.startsWith(IXL_MATHS_ROOT) ||
+    url.startsWith(IXL_ENGLISH_ROOT) ||
+    url.startsWith(IXL_SCIENCE_ROOT)
+  );
 };
 
 // Function to send a ping to the content script to check readiness (not needed with port messaging)
@@ -93,9 +125,9 @@ document.addEventListener('DOMContentLoaded', () => {
     console.log('Popup: chrome.tabs.query result:', tabs);
     const activeTab = tabs[0];
 
-    // Check if we are on the target page
+    // Check if we are on a target page AND if the tab has a valid ID
     if (activeTab && activeTab.id && activeTab.url && isTargetPage(activeTab.url)) {
-      console.log('Popup opened on target IXL page. Attempting to connect to content script.');
+      console.log('Popup opened on a target IXL page. Attempting to connect to content script.');
 
       // Connect to the content script in the active tab
       const port = chrome.tabs.connect(activeTab.id, { name: "popup" });
@@ -104,12 +136,18 @@ document.addEventListener('DOMContentLoaded', () => {
       // Listen for messages on the port
       port.onMessage.addListener((request) => {
         console.log('Popup: Received message on port:', request);
-        if (request.action === "updateScore") {
-          console.log('Popup: Processing updateScore message.', request.scores);
-           const { total, gained, lost } = request.scores;
-           updateDisplay('score', { total, gained, lost });
-           // Removed: Save the updated scores to storage
-           // chrome.storage.local.set({ /* ... */ });
+        if (request.action === "updateDisplayData") {
+          console.log('Popup: Processing updateDisplayData message.', request.data);
+          if (request.data.type === 'score_data') {
+            updateDisplay('score', request.data);
+          } else if (request.data.type === 'exercise_data') {
+            updateDisplay('exercises', request.data);
+          } else if (request.data.type === 'error') {
+             updateDisplay('message', request.data.message);
+          } else {
+            console.warn('Popup: Received unknown data type:', request.data.type);
+            updateDisplay('message', 'Unknown data format.');
+          }
         }
       });
 
@@ -117,13 +155,14 @@ document.addEventListener('DOMContentLoaded', () => {
       port.onDisconnect.addListener(() => {
         console.log('Popup: Port disconnected.');
         // You might want to update the UI to reflect disconnection if necessary
+        updateDisplay('message', 'Connection lost. Re-open popup.');
       });
 
-      // Show loading state initially
+      // Show loading state initially while waiting for data from content script
       updateDisplay('loading');
 
     } else {
-      console.log('Popup opened on a non-target page or active tab/URL missing.');
+      console.log('Popup opened on a non-target IXL page or active tab/URL missing.');
       // On a non-target page, hide score details and show the message
       updateDisplay('message', NOT_IXL_MESSAGE);
       document.getElementById('points-summary').style.display = 'none';

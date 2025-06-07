@@ -9,7 +9,10 @@
     "scripting"
   ],
   "host_permissions": [
-    "https://au.ixl.com/analytics/progress-and-improvement/*"
+    "https://au.ixl.com/analytics/progress-and-improvement/*",
+    "https://au.ixl.com/maths*",
+    "https://au.ixl.com/english*",
+    "https://au.ixl.com/science*"
   ],
   "action": {
     "default_popup": "popup.html",
