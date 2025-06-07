@@ -1,29 +1,44 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>IXL Score</title>
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
   <h1>Your iXL Score on Page</h1>
-  <div id="total-score-display">
-    <div id="current-score">Loading...</div>
-    <div id="total-score-label" class="score-label">Total Points</div>
+
+  <div id="total-score-display" class="hide">
+    <div id="current-score">0</div>
+    <div id="total-score-label">Total Points</div>
   </div>
-  <div id="points-summary">
-    <div class="points-gained">
-      <div id="points-gained-value" class="score-value">0</div>
-      <div class="score-label">Points Gained</div>
+
+  <div id="donut-chart-container" class="hide">
+    <div id="donut-chart"></div>
+    <div id="donut-center">
+      <div id="donut-total-value">0</div>
+      <div id="donut-total-label">Total Exercises</div>
     </div>
-    <div class="points-lost">
-      <div id="points-lost-value" class="score-value">0</div>
-      <div class="score-label">Points Lost</div>
+    <div id="donut-legend">
+      <div class="legend-item">
+        <span class="legend-color-box completed"></span>
+        <span class="legend-label">Completed</span>
+        <span id="completed-percentage" class="legend-percentage">0 (0%)</span>
+      </div>
+      <div class="legend-item">
+        <span class="legend-color-box in-progress"></span>
+        <span class="legend-label">In Progress</span>
+        <span id="in-progress-percentage" class="legend-percentage">0 (0%)</span>
+      </div>
+      <div class="legend-item">
+        <span class="legend-color-box not-started"></span>
+        <span class="legend-label">Not Started</span>
+        <span id="not-started-percentage" class="legend-percentage">0 (0%)</span>
+      </div>
     </div>
   </div>
+
   <div id="controls">
-    
+    <!-- No refresh button needed as score updates automatically on page load/change -->
   </div>
   <script src="popup.js"></script>
 </body>

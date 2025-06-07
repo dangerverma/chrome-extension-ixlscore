@@ -66,9 +66,33 @@ const calculateAnalyticsScores = () => {
 // Function to calculate total exercises (for subject pages)
 const calculateTotalExercises = () => {
   const skillElements = document.querySelectorAll(SKILL_EXERCISE_SELECTOR);
+  let completedExercises = 0;
+  let inProgressExercises = 0;
+
+  // Count completed exercises by medals
+  const medalElements = document.querySelectorAll('.skill-tree-skill-medal');
+  completedExercises = medalElements.length;
+
+  // Count in-progress exercises by score < 100
+  const scoreElements = document.querySelectorAll('a.skill-tree-skill-score.yui3-tooltip-trigger');
+  scoreElements.forEach(element => {
+    const scoreText = element.textContent.trim();
+    // Extract number from parentheses, e.g., (85)
+    const match = scoreText.match(/\((\d+)\)/);
+    if (match && match[1]) {
+      const score = parseInt(match[1]);
+      if (!isNaN(score) && score < 100) {
+        inProgressExercises++;
+      }
+    }
+  });
+
   return {
     type: 'exercise_data',
-    totalExercises: skillElements.length.toString()
+    totalExercises: skillElements.length.toString(),
+    completedExercises: completedExercises.toString(),
+    inProgressExercises: inProgressExercises.toString(),
+    notStartedExercises: (skillElements.length - completedExercises - inProgressExercises).toString()
   };
 };
 

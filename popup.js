@@ -7,8 +7,15 @@ const NOT_IXL_MESSAGE = 'This plugin only works with iXL.com website';
 
 // DOM Elements
 const totalScoreElement = document.getElementById('current-score');
-const pointsGainedElement = document.getElementById('points-gained-value');
-const pointsLostElement = document.getElementById('points-lost-value');
+const donutChartContainer = document.getElementById('donut-chart-container');
+const donutChart = document.getElementById('donut-chart');
+const donutTotalValue = document.getElementById('donut-total-value');
+const donutTotalLabel = document.getElementById('donut-total-label');
+
+// DOM elements for legend labels
+const completedPercentageElement = document.getElementById('completed-percentage');
+const inProgressPercentageElement = document.getElementById('in-progress-percentage');
+const notStartedPercentageElement = document.getElementById('not-started-percentage');
 
 // Function to animate a number count up with stronger ease-out effect
 const animateNumber = (element, start, end, duration) => {
@@ -20,7 +27,6 @@ const animateNumber = (element, start, end, duration) => {
     let progress = Math.min(elapsed / duration, 1);
 
     // Apply a stronger ease-out quintic function for more dramatic slowdown
-    // Source: https://easings.net/#easeOutQuint
     progress = 1 - Math.pow(1 - progress, 5);
 
     const currentValue = start + (range * progress);
@@ -36,69 +42,103 @@ const animateNumber = (element, start, end, duration) => {
   requestAnimationFrame(step);
 };
 
+// Function to animate the conic gradient for the donut chart
+const animateDonutGradient = (element, completedTarget, inProgressTarget, notStartedTarget, duration) => {
+  const startTime = performance.now();
+
+  const step = (currentTime) => {
+    const elapsed = currentTime - startTime;
+    let progress = Math.min(elapsed / duration, 1);
+
+    // Apply a stronger ease-out quintic function
+    progress = 1 - Math.pow(1 - progress, 5);
+
+    const currentCompleted = completedTarget * progress;
+    const currentInProgress = inProgressTarget * progress;
+    const currentNotStarted = notStartedTarget * progress;
+
+    const gradient = `conic-gradient(
+      #2ecc71 0% ${currentCompleted}%,
+      #f1c40f ${currentCompleted}% ${currentCompleted + currentInProgress}%,
+      #5b5b5b ${currentCompleted + currentInProgress}% ${currentCompleted + currentInProgress + currentNotStarted}%
+    )`;
+    element.style.background = gradient;
+
+    if (elapsed < duration) {
+      requestAnimationFrame(step);
+    }
+  };
+
+  requestAnimationFrame(step);
+};
+
 // Function to update the score display or show a message
 const updateDisplay = (type, value) => {
+  // Get references to main display sections
+  const totalScoreDisplaySection = document.getElementById('total-score-display');
+  const donutLegend = document.getElementById('donut-legend');
+
+  // Hide all main display sections initially
+  totalScoreDisplaySection.classList.add('hide');
+  donutChartContainer.classList.add('hide');
+  donutLegend.classList.add('hide'); // Hide legend initially
+
   switch (type) {
     case 'score':
-      const { total, gained, lost } = value;
-      
-      // Animate Total Points
-      const currentTotal = parseInt(totalScoreElement.textContent.replace(/,/g, '')) || 0;
-      const targetTotal = parseInt(total);
-      const animationDuration = 1500;
-      
-      if (!isNaN(targetTotal)) {
-         animateNumber(totalScoreElement, currentTotal, targetTotal, animationDuration);
-      } else {
-         totalScoreElement.textContent = total || 'N/A';
-      }
+      const { total: scoreTotal, gained, lost } = value;
 
-      // Update Gained and Lost points directly (no animation for simplicity)
-      pointsGainedElement.textContent = parseInt(gained).toLocaleString() || '0';
-      pointsLostElement.textContent = parseInt(lost).toLocaleString() || '0';
-
-      document.getElementById('total-score-display').style.display = '';
-      document.getElementById('points-summary').style.display = '';
-      totalScoreElement.style.fontSize = '3.5em';
-      totalScoreElement.style.color = '#2ecc71';
+      totalScoreDisplaySection.classList.remove('hide');
+      document.getElementById('current-score').textContent = parseInt(scoreTotal).toLocaleString();
       document.getElementById('total-score-label').textContent = 'Total Points';
+
+      document.getElementById('current-score').style.color = '#2ecc71'; // Green for points
       break;
+
     case 'exercises':
-      const { totalExercises } = value;
-      
-      // Animate Total Exercises (similar to Total Points)
-      const currentExercises = parseInt(totalScoreElement.textContent.replace(/,/g, '')) || 0;
-      const targetExercises = parseInt(totalExercises);
-      const exerciseAnimationDuration = 1500;
+      const { totalExercises, completedExercises, inProgressExercises, notStartedExercises } = value;
 
-      if (!isNaN(targetExercises)) {
-        animateNumber(totalScoreElement, currentExercises, targetExercises, exerciseAnimationDuration);
+      donutChartContainer.classList.remove('hide');
+      donutLegend.classList.remove('hide'); // Show legend for exercise data
+
+      const exerciseTotal = parseInt(totalExercises);
+      const completed = parseInt(completedExercises);
+      const inProgress = parseInt(inProgressExercises);
+      const notStarted = parseInt(notStartedExercises);
+
+      donutTotalValue.textContent = exerciseTotal.toLocaleString();
+
+      if (exerciseTotal === 0) {
+        completedPercentageElement.textContent = `0 (0%)`;
+        inProgressPercentageElement.textContent = `0 (0%)`;
+        notStartedPercentageElement.textContent = `0 (0%)`;
+        donutChart.style.background = 'conic-gradient(#5b5b5b 0% 100%)'; // All not started
       } else {
-        totalScoreElement.textContent = totalExercises || 'N/A';
-      }
+        const completedPercent = (completed / exerciseTotal) * 100;
+        const inProgressPercent = (inProgress / exerciseTotal) * 100;
+        const notStartedPercent = (notStarted / exerciseTotal) * 100;
 
-      // Hide points summary as it's not relevant for exercises
-      document.getElementById('points-summary').style.display = 'none';
-      document.getElementById('total-score-display').style.display = '';
-      totalScoreElement.style.fontSize = '3.5em';
-      totalScoreElement.style.color = '#3498db';
-      document.getElementById('total-score-label').textContent = 'Total Exercises';
+        completedPercentageElement.textContent = `${completed.toLocaleString()} (${completedPercent.toFixed(1)}%)`;
+        inProgressPercentageElement.textContent = `${inProgress.toLocaleString()} (${inProgressPercent.toFixed(1)}%)`;
+        notStartedPercentageElement.textContent = `${notStarted.toLocaleString()} (${notStartedPercent.toFixed(1)}%)`;
+
+        // Animate the donut chart segments
+        animateDonutGradient(donutChart, completedPercent, inProgressPercent, notStartedPercent, 1500); // 1.5 second animation
+      }
       break;
+
     case 'message':
-      totalScoreElement.textContent = value;
-      totalScoreElement.style.fontSize = '1em';
-      totalScoreElement.style.color = '#bdc3c7';
-      document.getElementById('total-score-display').style.display = '';
-      document.getElementById('points-summary').style.display = 'none';
+      totalScoreDisplaySection.classList.remove('hide');
+      document.getElementById('current-score').textContent = value;
+      document.getElementById('current-score').style.color = '#bdc3c7';
       document.getElementById('total-score-label').textContent = '';
       break;
+
     case 'loading':
-       totalScoreElement.textContent = 'Loading...';
-       totalScoreElement.style.fontSize = '1em';
-       totalScoreElement.style.color = '#bdc3c7';
-       document.getElementById('points-summary').style.display = 'none';
-       document.getElementById('total-score-label').textContent = '';
-       break;
+      totalScoreDisplaySection.classList.remove('hide');
+      document.getElementById('current-score').textContent = 'Loading...';
+      document.getElementById('current-score').style.color = '#bdc3c7';
+      document.getElementById('total-score-label').textContent = '';
+      break;
   }
 };
 
@@ -111,12 +151,6 @@ const isTargetPage = (url) => {
     url.startsWith(IXL_SCIENCE_ROOT)
   );
 };
-
-// Function to send a ping to the content script to check readiness (not needed with port messaging)
-// const pingContentScript = (tabId) => { /* ... */ };
-
-// Function to send message with retry logic (can keep for other potential uses)
-// const sendMessageWithRetry = (tabId, message, retries = 5, delay = 200) => { /* ... */ };
 
 // Establish connection to content script and set up message listener
 document.addEventListener('DOMContentLoaded', () => {
@@ -165,10 +199,6 @@ document.addEventListener('DOMContentLoaded', () => {
       console.log('Popup opened on a non-target IXL page or active tab/URL missing.');
       // On a non-target page, hide score details and show the message
       updateDisplay('message', NOT_IXL_MESSAGE);
-      document.getElementById('points-summary').style.display = 'none';
     }
   });
 });
-
-// Removed: Old chrome.runtime.onMessage.addListener
-// chrome.runtime.onMessage.addListener((request, sender, sendResponse) => { /* ... */ }); 

@@ -1,19 +1,22 @@
 /* Dark theme styles for the IXL Score Extension popup */
 
 body {
-  width: 260px; /* Slightly wider */
+  width: 300px; 
   padding: 20px;
   font-family: 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
   background-color: #2c3e50; /* Dark blue/gray background */
   color: #ecf0f1; /* Light text color */
   text-align: center;
   box-sizing: border-box; /* Include padding in width */
+  margin: 0;
+  padding: 0;
+  display: block; /* Ensure default block display */
 }
 
 h1 {
   color: #3498db; /* A shade of blue for the title */
   font-size: 1.3em;
-  margin-top: 0;
+  margin-top: 15px;
   margin-bottom: 20px;
   padding-bottom: 15px;
   border-bottom: 1px solid #34495e; /* Slightly lighter dark separator */
@@ -40,42 +43,167 @@ h1 {
 }
 
 #points-summary {
-  display: flex;
-  justify-content: space-around;
-  margin-top: 20px;
-  padding-top: 20px;
-  border-top: 1px solid #34495e; /* Slightly lighter dark separator */
+  display: none !important;
 }
 
-.points-gained,
-.points-lost {
-  text-align: center;
-  flex-grow: 1;
-  padding: 0 10px; /* Add padding */
+/* Classes for controlling visibility */
+.show {
+    display: block !important;
 }
 
-.points-gained .score-value {
-  color: #2ecc71; /* Green for points gained */
-  font-weight: bold;
-  font-size: 1.3em;
-}
-
-.points-lost .score-value {
-  color: #e74c3c; /* Red for points lost */
-  font-weight: bold;
-  font-size: 1.3em;
-}
-
-.points-gained .score-label,
-.points-lost .score-label {
-   font-size: 0.9em;
-   color: #bdc3c7; /* Lighter gray label text */
-   margin-top: 5px;
+.hide {
+    display: none !important;
 }
 
 /* Ensure controls section is hidden */
 #controls {
     display: none;
+}
+
+/* Donut Chart Styles */
+#donut-chart-container {
+  margin-top: 20px;
+  padding: 15px;
+  background-color: #34495e; /* Darker background for emphasis */
+  border-radius: 8px; /* Rounded corners */
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2); /* Subtle shadow */
+  position: relative; /* Context for absolute positioning of labels */
+  width: 260px; /* Consistent width */
+  margin: 20px auto; /* Center the container */
+  box-sizing: border-box; /* Ensure consistent box model */
+}
+
+#donut-chart {
+  width: 150px;
+  height: 150px;
+  min-width: 150px; /* Enforce minimum width */
+  min-height: 150px; /* Enforce minimum height */
+  max-width: 150px; /* Enforce maximum width */
+  max-height: 150px; /* Enforce maximum height */
+  border-radius: 50%;
+  aspect-ratio: 1 / 1; /* Force 1:1 aspect ratio for perfect circle */
+  background: conic-gradient(
+    #2ecc71 0% 0%, /* Completed - placeholder, set by JS */
+    #f1c40f 0% 0%, /* In Progress - placeholder, set by JS */
+    #5b5b5b 0% 0% /* Not Started - placeholder, set by JS */
+  );
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: relative;
+  margin-bottom: 20px; /* Re-added margin-bottom for spacing below chart */
+  box-sizing: border-box; /* Ensure consistent box model for the donut itself */
+  overflow: hidden; /* Prevent content from breaking circular shape */
+}
+
+#donut-chart::before {
+  content: '';
+  position: absolute;
+  width: 90px; /* Inner circle size (adjust for desired donut thickness) */
+  height: 90px;
+  background-color: #2c3e50; /* Inner circle color matching body background */
+  border-radius: 50%;
+  box-sizing: border-box; /* Ensure consistent box model for the inner circle */
+}
+
+#donut-center {
+  position: relative; /* Bring content above ::before */
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+#donut-total-value {
+  font-size: 3em; /* Size for total exercises number */
+  font-weight: bold;
+  color: #3498db; /* Blue for total exercises number */
+}
+
+#donut-total-label {
+  font-size: 1em;
+  color: #bdc3c7; /* Lighter gray for label */
+  margin-top: 2px;
+}
+
+/* Legend Styles */
+#donut-legend {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  padding: 0 10px;
+  margin-top: 20px; /* Add margin to separate from chart */
+  border-top: 1px solid #34495e; /* Separator */
+  padding-top: 20px;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between; /* Distribute items */
+  margin-bottom: 8px;
+  font-size: 1.2em;
+}
+
+.legend-color-box {
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+  margin-right: 8px;
+  flex-shrink: 0; /* Prevent shrinking */
+}
+
+.legend-color-box.completed {
+  background-color: #2ecc71; /* Green */
+}
+
+.legend-color-box.in-progress {
+  background-color: #f1c40f; /* Yellow */
+}
+
+.legend-color-box.not-started {
+  background-color: #5b5b5b; /* Dark Grey */
+}
+
+.legend-label {
+  color: #ecf0f1; /* Light text color */
+  flex-grow: 1; /* Allow label to take up available space */
+  text-align: left;
+  margin-right: 10px; /* Add some space between label and percentage */
+}
+
+.legend-percentage {
+  color: #bdc3c7; /* Lighter gray for percentage and number */
+  font-weight: bold;
+  flex-shrink: 0;
+  text-align: right; /* Align percentage to the right */
+}
+
+/* Ensure total-score-display is hidden when donut is shown */
+#total-score-display.hide {
+    display: none !important;
+}
+
+/* Hide old points-summary, ensure it's not lingering */
+#points-summary {
+  display: none !important;
+}
+
+/* Removed controls section styling as the button is removed */
+
+#refresh-score {
+  padding: 8px 15px;
+  background-color: #61afef; /* Example: a button color */
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+#refresh-score:hover {
+  background-color: #52a3d9;
 }
 
 /* Basic styles for the popup */
@@ -176,5 +304,128 @@ h1 {
 
 #refresh-score:hover {
   background-color: #52a3d9;
+}
+
+/* Donut Chart Styles - Chart.js will handle rendering */
+#donut-chart-container {
+  position: relative;
+  width: 250px; /* Adjusted width to provide space for labels */
+  margin: 20px auto; /* Center the container */
+  box-sizing: border-box; /* Ensure consistent box model */
+  padding: 15px;
+  background-color: #34495e; /* Darker background for emphasis */
+  border-radius: 8px; /* Rounded corners */
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2); /* Subtle shadow */
+  display: flex; /* Re-add flex to center canvas and donut-center */
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+#exerciseDonutChart {
+  max-width: 100%; /* Ensure canvas scales within container */
+  height: auto; /* Maintain aspect ratio */
+}
+
+/* Styling for donut-center to hold total exercises value */
+#donut-center {
+  position: absolute; /* Position over the center of the canvas */
+  top: 30%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 10; /* Ensure it's above the canvas */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: #3498db; /* Blue for total exercises number */
+}
+
+#donut-total-value {
+  font-size: 3em; /* Size for total exercises number */
+  font-weight: bold;
+}
+
+#donut-total-label {
+  font-size: 1em;
+  color: #bdc3c7; /* Lighter gray for label */
+  margin-top: 2px;
+}
+
+/* Restore #donut-legend and its children styles */
+#donut-legend {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  padding: 0 10px;
+  margin-top: 20px; /* Add margin to separate from chart */
+  border-top: 1px solid #34495e; /* Separator */
+  padding-top: 20px;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between; /* Distribute items */
+  margin-bottom: 8px;
+  font-size: 1.2em;
+}
+
+.legend-color-box {
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+  margin-right: 8px;
+  flex-shrink: 0; /* Prevent shrinking */
+}
+
+.legend-color-box.completed {
+  background-color: #2ecc71; /* Green */
+}
+
+.legend-color-box.in-progress {
+  background-color: #f1c40f; /* Yellow */
+}
+
+.legend-color-box.not-started {
+  background-color: #5b5b5b; /* Dark Grey */
+}
+
+.legend-label {
+  color: #ecf0f1; /* Light text color */
+  flex-grow: 1; /* Allow label to take up available space */
+  text-align: left;
+  margin-right: 10px; /* Add some space between label and percentage */
+}
+
+.legend-percentage {
+  color: #bdc3c7; /* Lighter gray for percentage and number */
+  font-weight: bold;
+  flex-shrink: 0;
+  text-align: right; /* Align percentage to the right */
+}
+
+/* Ensure total-score-display is hidden when donut is shown */
+#total-score-display.hide {
+    display: none !important;
+}
+
+/* Hide old points-summary, ensure it's not lingering */
+#points-summary {
+  display: none !important;
+}
+
+/* Classes for controlling visibility */
+.show {
+    display: block !important;
+}
+
+.hide {
+    display: none !important;
+}
+
+/* Ensure controls section is hidden */
+#controls {
+    display: none;
 }
  
