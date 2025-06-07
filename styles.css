@@ -23,7 +23,7 @@ h1 {
 }
 
 #total-score-display {
-  margin-bottom: 25px;
+  margin:20px;
   padding: 15px;
   background-color: #34495e; /* Darker background for emphasis */
   border-radius: 8px; /* Rounded corners */
