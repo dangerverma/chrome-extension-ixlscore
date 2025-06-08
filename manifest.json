@@ -1,18 +1,15 @@
 {
   "manifest_version": 3,
-  "name": "IXL Score Extension",
+  "name": "IXL Score",
   "version": "1.0",
-  "description": "A Chrome extension for tracking IXL Analytics Progress and Improvement scores.",
+  "description": "Calculate your IXL score and track exercise progress",
   "minimum_chrome_version": "88",
   "permissions": [
     "activeTab",
     "scripting"
   ],
   "host_permissions": [
-    "https://au.ixl.com/analytics/progress-and-improvement/*",
-    "https://au.ixl.com/maths*",
-    "https://au.ixl.com/english*",
-    "https://au.ixl.com/science*"
+    "https://au.ixl.com/*"
   ],
   "action": {
     "default_popup": "popup.html",
@@ -30,5 +27,9 @@
     "16": "icons/icon16.png",
     "48": "icons/icon48.png",
     "128": "icons/icon128.png"
-  }
+  },
+  "web_accessible_resources": [{
+    "resources": ["lib/*"],
+    "matches": ["https://au.ixl.com/*"]
+  }]
 } 

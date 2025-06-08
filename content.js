@@ -1,11 +1,14 @@
 // Constants
-const IXL_ANALYTICS_PATTERN = 'https://au.ixl.com/analytics/progress-and-improvement';
+const IXL_ANALYTICS_PATTERN = 'https://au.ixl.com/analytics/';
 const IXL_MATHS_PATTERN = 'https://au.ixl.com/maths';
 const IXL_ENGLISH_PATTERN = 'https://au.ixl.com/english';
 const IXL_SCIENCE_PATTERN = 'https://au.ixl.com/science';
 const SKILL_EXERCISE_SELECTOR = 'span.skill-tree-skill-name';
 const IMPROVEMENT_CONTAINER_SELECTOR = '.improvement-container';
 const SCORE_SELECTOR = '.score';
+
+// Global variable to store the active popup port
+let popupPort = null;
 
 // IMPORTANT: Replace these placeholder selectors with the actual selectors found on the IXL page.
 // You can use Chrome DevTools (F12) to inspect the page elements and find their unique selectors.
@@ -23,16 +26,21 @@ const SCORE_SELECTORS = {
 // Function to determine the current IXL page type
 const getPageType = () => {
   const url = window.location.href;
+  console.log('Content script: Current URL:', url);
   if (url.startsWith(IXL_ANALYTICS_PATTERN)) {
+    console.log('Content script: Page type: analytics');
     return 'analytics';
   } else if (url.startsWith(IXL_MATHS_PATTERN) || url.startsWith(IXL_ENGLISH_PATTERN) || url.startsWith(IXL_SCIENCE_PATTERN)) {
+    console.log('Content script: Page type: subject_skills');
     return 'subject_skills';
   }
+  console.log('Content script: Page type: unknown');
   return 'unknown';
 };
 
 // Function to calculate scores from improvement containers (for analytics page)
 const calculateAnalyticsScores = () => {
+  console.log('Content script: Calculating analytics scores...');
   const improvementContainers = document.querySelectorAll(IMPROVEMENT_CONTAINER_SELECTOR);
   let totalPoints = 0;
   let pointsGained = 0;
@@ -54,6 +62,7 @@ const calculateAnalyticsScores = () => {
       }
     }
   });
+  console.log('Content script: Analytics scores calculated:', { totalPoints, pointsGained, pointsLost });
 
   return {
     type: 'score_data',
@@ -65,6 +74,7 @@ const calculateAnalyticsScores = () => {
 
 // Function to calculate total exercises (for subject pages)
 const calculateTotalExercises = () => {
+  console.log('Content script: Calculating total exercises...');
   const skillElements = document.querySelectorAll(SKILL_EXERCISE_SELECTOR);
   let completedExercises = 0;
   let inProgressExercises = 0;
@@ -86,24 +96,32 @@ const calculateTotalExercises = () => {
       }
     }
   });
+  const notStartedExercises = (skillElements.length - completedExercises - inProgressExercises);
+  console.log('Content script: Exercise data calculated:', { totalExercises: skillElements.length, completedExercises, inProgressExercises, notStartedExercises });
 
   return {
     type: 'exercise_data',
     totalExercises: skillElements.length.toString(),
     completedExercises: completedExercises.toString(),
     inProgressExercises: inProgressExercises.toString(),
-    notStartedExercises: (skillElements.length - completedExercises - inProgressExercises).toString()
+    notStartedExercises: notStartedExercises.toString()
   };
 };
 
 // Unified function to get data based on page type
 const getDataForPage = () => {
+  console.log('Content script: Getting data for page...');
   const pageType = getPageType();
   if (pageType === 'analytics') {
-    return calculateAnalyticsScores();
+    const data = calculateAnalyticsScores();
+    console.log('Content script: Data for analytics page:', data);
+    return data;
   } else if (pageType === 'subject_skills') {
-    return calculateTotalExercises();
+    const data = calculateTotalExercises();
+    console.log('Content script: Data for subject skills page:', data);
+    return data;
   }
+  console.log('Content script: Not an IXL analytics or subject skills page.');
   return { type: 'error', message: 'Not an IXL analytics or subject skills page.' };
 };
 
@@ -118,18 +136,15 @@ const isTargetPage = () => {
   // This function is mainly for background script to check general target URLs
   // For content script, we use getPageType for more specific logic.
   const url = window.location.href;
-  return url.startsWith(IXL_ANALYTICS_PATTERN) ||
-         url.startsWith(IXL_MATHS_PATTERN) ||
-         url.startsWith(IXL_ENGLISH_PATTERN) ||
-         url.startsWith(IXL_SCIENCE_PATTERN);
-};
+  console.log('Content script: isTargetPage - Checking URL:', url);
+  const isAnalytics = url.startsWith(IXL_ANALYTICS_PATTERN);
+  const isMaths = url.startsWith(IXL_MATHS_PATTERN);
+  const isEnglish = url.startsWith(IXL_ENGLISH_PATTERN);
+  const isScience = url.startsWith(IXL_SCIENCE_PATTERN);
+  
+  console.log(`Content script: isTargetPage - Analytics match: ${isAnalytics}, Maths match: ${isMaths}, English match: ${isEnglish}, Science match: ${isScience}`);
 
-// Function to send data to the popup (now sends different types of data)
-const sendDataToPopup = (data) => {
-  chrome.runtime.sendMessage({
-    action: "updateDisplayData", // Renamed action for clarity
-    data: data
-  });
+  return isAnalytics || isMaths || isEnglish || isScience;
 };
 
 // Function to send data to the background script (optional, keeping for structure)
@@ -156,7 +171,10 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === "refreshScore") {
     console.log('IXL Score Extension: Refresh requested. Recalculating data.');
     const data = getDataForPage();
-    sendDataToPopup(data);
+    if (popupPort) {
+        console.log('Content script: Sending refreshScore data to popup:', data);
+        popupPort.postMessage({ action: "updateDisplayData", data: data });
+    }
     sendDataToBackground(data);
     sendResponse({ success: true, data: data });
     return true; 
@@ -167,10 +185,17 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 chrome.runtime.onConnect.addListener((port) => {
   console.log('Content script: Port connected:', port.name);
   if (port.name === "popup") {
+    popupPort = port; // Store the port reference
     console.log('Content script: Popup connected, sending initial data.');
     // Calculate current data and send it immediately through the port
     const currentData = getDataForPage();
-    port.postMessage({ action: "updateDisplayData", data: currentData });
+    popupPort.postMessage({ action: "updateDisplayData", data: currentData });
+
+    // Handle disconnection of the popup
+    popupPort.onDisconnect.addListener(() => {
+        console.log('Content script: Popup disconnected.');
+        popupPort = null; // Clear the port reference on disconnect
+    });
   }
 });
 
@@ -182,7 +207,11 @@ document.addEventListener('DOMContentLoaded', () => {
     try {
       // Initial data calculation and send. This also covers the case where popup is not yet open.
       const initialData = getDataForPage();
-      sendDataToPopup(initialData);
+      // Only send initial data via port if popup is already connected
+      if (popupPort) {
+          console.log('Content script: Sending initial data via port to popup:', initialData);
+          popupPort.postMessage({ action: "updateDisplayData", data: initialData });
+      }
       sendDataToBackground(initialData);
 
       // Set up a MutationObserver to watch for changes in relevant containers
@@ -190,7 +219,11 @@ document.addEventListener('DOMContentLoaded', () => {
       const observer = new MutationObserver((mutations) => {
         console.log('Content script: DOM mutations detected. Recalculating data.');
         const newData = getDataForPage();
-        sendDataToPopup(newData);
+        // Only send updated data via port if popup is connected
+        if (popupPort) {
+            console.log('Content script: Sending updated data via port to popup:', newData);
+            popupPort.postMessage({ action: "updateDisplayData", data: newData });
+        }
         sendDataToBackground(newData);
       });
 

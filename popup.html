@@ -3,9 +3,10 @@
 <head>
   <title>IXL Score</title>
   <link rel="stylesheet" href="styles.css">
+  <script src="lib/echarts.min.js"></script>
 </head>
 <body>
-  <h1>Your iXL Score on Page</h1>
+  <h1>iXL Score</h1>
 
   <div id="total-score-display" class="hide">
     <div id="current-score">0</div>
@@ -14,27 +15,6 @@
 
   <div id="donut-chart-container" class="hide">
     <div id="donut-chart"></div>
-    <div id="donut-center">
-      <div id="donut-total-value">0</div>
-      <div id="donut-total-label">Total Exercises</div>
-    </div>
-    <div id="donut-legend">
-      <div class="legend-item">
-        <span class="legend-color-box completed"></span>
-        <span class="legend-label">Completed</span>
-        <span id="completed-percentage" class="legend-percentage">0 (0%)</span>
-      </div>
-      <div class="legend-item">
-        <span class="legend-color-box in-progress"></span>
-        <span class="legend-label">In Progress</span>
-        <span id="in-progress-percentage" class="legend-percentage">0 (0%)</span>
-      </div>
-      <div class="legend-item">
-        <span class="legend-color-box not-started"></span>
-        <span class="legend-label">Not Started</span>
-        <span id="not-started-percentage" class="legend-percentage">0 (0%)</span>
-      </div>
-    </div>
   </div>
 
   <div id="controls">
