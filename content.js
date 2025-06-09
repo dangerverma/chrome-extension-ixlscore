@@ -79,20 +79,38 @@ const calculateTotalExercises = () => {
   let completedExercises = 0;
   let inProgressExercises = 0;
 
-  // Count completed exercises by medals
-  const medalElements = document.querySelectorAll('.skill-tree-skill-medal');
-  completedExercises = medalElements.length;
-
-  // Count in-progress exercises by score < 100
-  const scoreElements = document.querySelectorAll('a.skill-tree-skill-score.yui3-tooltip-trigger');
-  scoreElements.forEach(element => {
+  // Count completed exercises by score = 100
+  let scoreElements = document.querySelectorAll('a.skill-tree-skill-score.yui3-tooltip-trigger');
+  console.log('Content script: Found score elements with combined selector:', scoreElements.length);
+  
+  // If no elements found, try alternative selectors
+  if (scoreElements.length === 0) {
+    scoreElements = document.querySelectorAll('a[class*="skill-tree-skill-score"]');
+    console.log('Content script: Found score elements with partial class selector:', scoreElements.length);
+  }
+  
+  if (scoreElements.length === 0) {
+    scoreElements = document.querySelectorAll('.skill-tree-skill-score');
+    console.log('Content script: Found score elements with class selector:', scoreElements.length);
+  }
+  
+  scoreElements.forEach((element, index) => {
     const scoreText = element.textContent.trim();
-    // Extract number from parentheses, e.g., (85)
+    const elementClasses = element.className;
+    console.log(`Content script: Score element ${index}: "${scoreText}" (classes: "${elementClasses}")`);
+    // Extract number from parentheses, e.g., (85) or (100)
     const match = scoreText.match(/\((\d+)\)/);
     if (match && match[1]) {
       const score = parseInt(match[1]);
-      if (!isNaN(score) && score < 100) {
-        inProgressExercises++;
+      console.log(`Content script: Extracted score: ${score}`);
+      if (!isNaN(score)) {
+        if (score === 100) {
+          completedExercises++;
+          console.log(`Content script: Added to completed. Total: ${completedExercises}`);
+        } else if (score < 100) {
+          inProgressExercises++;
+          console.log(`Content script: Added to in-progress. Total: ${inProgressExercises}`);
+        }
       }
     }
   });
