@@ -1,11 +1,14 @@
 # IXL Score Extension
 
-A Chrome extension for tracking IXL scores.
+A Chrome extension for tracking IXL scores on various pages.
 
 ## Features
-- Track IXL scores in real-time
-- Easy-to-use popup interface
-- Automatic score updates
+- Provides Completed, In Progress and Not Started scores for:
+-- Maths page
+-- English page
+-- Science page
+- Provides a total count of points accumulated on the Analytics > In Progress page
+
 
 ## Installation
 1. Clone this repository
@@ -20,7 +23,5 @@ A Chrome extension for tracking IXL scores.
 - `background.js` - Background service worker
 - `styles.css` - Styling for the popup
 
-## TODO
-- Implement actual score extraction from IXL website
-- Add score history tracking
-- Add notifications for score milestones
+## Latest Version
+- Current version is 1.0
