@@ -4,9 +4,9 @@ A Chrome extension for tracking IXL scores on various pages.
 
 ## Features
 - Provides Completed, In Progress and Not Started scores for:
--- Maths page
--- English page
--- Science page
+  - Maths page
+  - English page
+  - Science page
 - Provides a total count of points accumulated on the Analytics > In Progress page
 
 
