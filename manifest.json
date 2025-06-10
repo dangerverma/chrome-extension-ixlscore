@@ -9,7 +9,7 @@
     "scripting"
   ],
   "host_permissions": [
-    "https://au.ixl.com/*"
+    "https://*.ixl.com/*"
   ],
   "action": {
     "default_popup": "popup.html",
