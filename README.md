@@ -2,6 +2,10 @@
 
 A Chrome extension for tracking IXL scores on various pages.
 
+![See your score in real-time (2)](https://github.com/user-attachments/assets/8b5f003e-7ee4-423f-9f24-5da79c62a9c1)
+![Untitled design (3)](https://github.com/user-attachments/assets/e09c85ce-bdf4-421a-9cc8-4945f9531468)
+![Untitled (1280 x 800 px)](https://github.com/user-attachments/assets/3989c239-5a03-4183-9dc0-df7cddd3c8ad)
+
 ## Features
 - Provides Completed, In Progress and Not Started scores for:
   - Maths page
