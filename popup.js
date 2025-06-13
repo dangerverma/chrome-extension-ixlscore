@@ -11,6 +11,8 @@ const currentScore = document.getElementById('current-score');
 const scoreLabel = document.getElementById('total-score-label');
 const donutChartContainer = document.getElementById('donut-chart-container');
 const donutChart = document.getElementById('donut-chart');
+const ixlNavigationContainer = document.getElementById('ixl-navigation-container');
+const goToIxlButton = document.getElementById('go-to-ixl-button');
 
 // Initialize ECharts instance
 let chart = null;
@@ -193,6 +195,14 @@ function isTargetPage(url) {
     return isAnalytics || isMaths || isEnglish || isScience;
 }
 
+// Function to navigate to IXL.com
+function navigateToIxl() {
+    chrome.tabs.create({ url: 'https://www.ixl.com' });
+}
+
+// Add event listener for the IXL button
+goToIxlButton.addEventListener('click', navigateToIxl);
+
 // Initialize chart when DOM is loaded
 document.addEventListener('DOMContentLoaded', function() {
     console.log('Popup: DOMContentLoaded fired.');
@@ -222,11 +232,10 @@ document.addEventListener('DOMContentLoaded', function() {
             console.log('Popup: Requested initial data from content script.');
         } else {
             console.log('Popup: Not on a target page.', activeTab.url);
-            // Not on a target page
-            updateDisplay({
-                type: 'message',
-                message: 'Please navigate to an IXL analytics or subject page'
-            });
+            // Not on a target page - show navigation container
+            totalScoreDisplay.classList.add('hide');
+            donutChartContainer.classList.add('hide');
+            ixlNavigationContainer.classList.remove('hide');
         }
     });
 });

@@ -90,6 +90,78 @@ h1 {
   display: none !important;
 }
 
+/* IXL Navigation Container Styles */
+#ixl-navigation-container {
+  text-align: center;
+  padding: 20px;
+  max-width: 300px;
+}
+
+#ixl-navigation-container h1 {
+  color: #007bff;
+  margin-bottom: 15px;
+  font-size: 1.5em;
+  border-bottom: 2px solid #007bff;
+  padding-bottom: 10px;
+}
+
+#ixl-navigation-container p {
+  color: #6c757d;
+  margin-bottom: 20px;
+  font-size: 1em;
+  line-height: 1.4;
+}
+
+.ixl-button {
+  background-color: #007bff;
+  color: white;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 6px;
+  font-size: 1em;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.3s ease, transform 0.2s ease;
+  box-shadow: 0 2px 4px rgba(0, 123, 255, 0.3);
+}
+
+.ixl-button:hover {
+  background-color: #0056b3;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 123, 255, 0.4);
+}
+
+.ixl-button:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 4px rgba(0, 123, 255, 0.3);
+}
+
+/* Dark mode support for IXL navigation */
+@media (prefers-color-scheme: dark) {
+  #ixl-navigation-container h1 {
+    color: var(--title-color-dark);
+    border-bottom-color: var(--border-color-dark);
+  }
+  
+  #ixl-navigation-container p {
+    color: var(--label-color-dark);
+  }
+  
+  .ixl-button {
+    background-color: #00aaff;
+    box-shadow: 0 2px 4px rgba(0, 170, 255, 0.3);
+  }
+  
+  .ixl-button:hover {
+    background-color: #0088cc;
+    box-shadow: 0 4px 8px rgba(0, 170, 255, 0.4);
+  }
+  
+  .ixl-button:active {
+    box-shadow: 0 2px 4px rgba(0, 170, 255, 0.3);
+  }
+}
+
 /* Basic styles for the popup */
 
 /* Define CSS Variables for colors */

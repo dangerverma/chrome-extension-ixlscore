@@ -6,15 +6,20 @@
   <script src="lib/echarts.min.js"></script>
 </head>
 <body>
-  <h1>iXL Score</h1>
-
-  <div id="total-score-display" class="hide">
+  <div id="total-score-display">
+    <h1>IXL Score Tracker</h1>
     <div id="current-score">0</div>
     <div id="total-score-label">Total Points</div>
   </div>
 
   <div id="donut-chart-container" class="hide">
     <div id="donut-chart"></div>
+  </div>
+
+  <div id="ixl-navigation-container" class="hide">
+    <h1>IXL Score Tracker</h1>
+    <p>Please navigate to an IXL analytics or subject page to view your progress.</p>
+    <button id="go-to-ixl-button" class="ixl-button">Go to IXL.com Website now</button>
   </div>
 
   <div id="controls">

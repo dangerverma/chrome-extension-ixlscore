@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "IXL Score",
-  "version": "1.0",
+  "version": "1.1",
   "description": "Calculate your IXL score and track exercise progress",
   "minimum_chrome_version": "88",
   "permissions": [
