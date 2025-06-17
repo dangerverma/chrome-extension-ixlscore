@@ -15,7 +15,7 @@ A Chrome extension for tracking IXL scores on various pages.
 
 
 ## Installation
-1. Clone this repository
+1. Clone this repository or download the latest dist <a href="dist/ixl-score-extension-latest.zip">here</a>
 2. Open Chrome and go to `chrome://extensions/`
 3. Enable "Developer mode" in the top right
 4. Click "Load unpacked" and select this directory
@@ -27,5 +27,31 @@ A Chrome extension for tracking IXL scores on various pages.
 - `background.js` - Background service worker
 - `styles.css` - Styling for the popup
 
-## Latest Version
-- Current version is 1.0
+## Building New Versions
+
+To create a distribution package for a new version:
+
+1. **Update the version** in `manifest.json`:
+   ```json
+   {
+     "version": "1.2"
+   }
+   ```
+
+2. **Run the build script**:
+   ```bash
+   python3 build.py
+   ```
+
+3. **Find your distribution** in the `dist/` folder:
+   ```
+   dist/ixl-score-extension-v1.2-20241210_143022.zip
+   ```
+
+The build script will:
+- ✅ Read the version from `manifest.json`
+- ✅ Create a clean zip file with all necessary files
+- ✅ Exclude development files (`.git`, `.DS_Store`, etc.)
+- ✅ Include documentation (`README.md`, `LICENSE`)
+- ✅ Generate a timestamped filename for easy versioning
+
