@@ -162,6 +162,48 @@ h1 {
   }
 }
 
+/* Copyright Footer Styles */
+#copyright-footer {
+  position: relative;
+  margin-top: 15px;
+  padding: 8px 12px;
+  text-align: center;
+  font-size: 10px;
+  color: #6c757d;
+  background-color: transparent;
+}
+
+#copyright-footer p {
+  margin: 0;
+  line-height: 1.2;
+}
+
+#copyright-footer a {
+  color: #007bff;
+  text-decoration: none;
+  font-weight: 500;
+}
+
+#copyright-footer a:hover {
+  text-decoration: underline;
+  color: #0056b3;
+}
+
+/* Dark mode support for copyright footer */
+@media (prefers-color-scheme: dark) {
+  #copyright-footer {
+    color: #b0b0b0;
+  }
+  
+  #copyright-footer a {
+    color: #00aaff;
+  }
+  
+  #copyright-footer a:hover {
+    color: #0088cc;
+  }
+}
+
 /* Basic styles for the popup */
 
 /* Define CSS Variables for colors */

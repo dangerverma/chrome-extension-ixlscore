@@ -13,9 +13,41 @@ const donutChartContainer = document.getElementById('donut-chart-container');
 const donutChart = document.getElementById('donut-chart');
 const ixlNavigationContainer = document.getElementById('ixl-navigation-container');
 const goToIxlButton = document.getElementById('go-to-ixl-button');
+const copyrightFooter = document.getElementById('copyright-footer');
 
 // Initialize ECharts instance
 let chart = null;
+
+// Function to update copyright footer with version from manifest
+function updateCopyrightFooter() {
+    console.log('Popup: Updating copyright footer with version from manifest...');
+    
+    // Try to get version from management API
+    if (chrome.management && chrome.management.getSelf) {
+        chrome.management.getSelf((extensionInfo) => {
+            console.log('Popup: Extension info received:', extensionInfo);
+            if (extensionInfo && extensionInfo.version) {
+                const version = extensionInfo.version;
+                console.log('Popup: Version from manifest:', version);
+                const footerText = copyrightFooter.querySelector('p');
+                footerText.innerHTML = `License: GPL v3 | v${version} | <a href="https://github.com/dangerverma/chrome-extension-ixlscore" target="_blank">Source Code</a>`;
+                console.log('Popup: Footer updated with version:', version);
+            } else {
+                console.warn('Popup: No version info received from management API');
+                setDefaultFooter();
+            }
+        });
+    } else {
+        console.warn('Popup: Management API not available, using default footer');
+        setDefaultFooter();
+    }
+}
+
+// Fallback function to set default footer
+function setDefaultFooter() {
+    const footerText = copyrightFooter.querySelector('p');
+    footerText.innerHTML = `License: GPL v3 | <a href="https://github.com/dangerverma/chrome-extension-ixlscore" target="_blank">Source Code</a>`;
+}
 
 function initDonutChart() {
     if (chart) {
@@ -208,6 +240,9 @@ document.addEventListener('DOMContentLoaded', function() {
     console.log('Popup: DOMContentLoaded fired.');
     // Initialize the chart
     initDonutChart();
+    
+    // Update copyright footer with version from manifest
+    updateCopyrightFooter();
     
     // Query for the active tab
     chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
