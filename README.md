@@ -45,7 +45,7 @@ To create a distribution package for a new version:
 
 3. **Find your distribution** in the `dist/` folder:
    ```
-   dist/ixl-score-extension-v1.2-20241210_143022.zip
+   dist/ixl-score-extension-latest.zip
    ```
 
 The build script will:
