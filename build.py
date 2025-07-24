@@ -64,8 +64,8 @@ def create_distribution():
         'dist'
     ]
     
-    # Create distribution filename in dist folder
-    dist_filename = os.path.join(dist_dir, "ixl-score-extension-latest.zip")
+    # Create distribution filename in dist folder with version
+    dist_filename = os.path.join(dist_dir, f"ixl-score-extension-{version}-latest.zip")
     
     print(f"Creating distribution file: {dist_filename}")
     

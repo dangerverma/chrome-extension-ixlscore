@@ -18,35 +18,15 @@ const copyrightFooter = document.getElementById('copyright-footer');
 // Initialize ECharts instance
 let chart = null;
 
-// Function to update copyright footer with version from manifest
+// Function to update copyright footer with hardcoded version
 function updateCopyrightFooter() {
-    console.log('Popup: Updating copyright footer with version from manifest...');
+    console.log('Popup: Updating copyright footer with hardcoded version...');
     
-    // Try to get version from management API
-    if (chrome.management && chrome.management.getSelf) {
-        chrome.management.getSelf((extensionInfo) => {
-            console.log('Popup: Extension info received:', extensionInfo);
-            if (extensionInfo && extensionInfo.version) {
-                const version = extensionInfo.version;
-                console.log('Popup: Version from manifest:', version);
-                const footerText = copyrightFooter.querySelector('p');
-                footerText.innerHTML = `License: GPL v3 | v${version} | <a href="https://github.com/dangerverma/chrome-extension-ixlscore" target="_blank">Source Code</a>`;
-                console.log('Popup: Footer updated with version:', version);
-            } else {
-                console.warn('Popup: No version info received from management API');
-                setDefaultFooter();
-            }
-        });
-    } else {
-        console.warn('Popup: Management API not available, using default footer');
-        setDefaultFooter();
-    }
-}
-
-// Fallback function to set default footer
-function setDefaultFooter() {
+    const version = '1.2'; // Hardcoded version from manifest.json
+    console.log('Popup: Version from hardcoded value:', version);
     const footerText = copyrightFooter.querySelector('p');
-    footerText.innerHTML = `License: GPL v3 | <a href="https://github.com/dangerverma/chrome-extension-ixlscore" target="_blank">Source Code</a>`;
+    footerText.innerHTML = `License: GPL v3 | v${version} | <a href="https://github.com/dangerverma/chrome-extension-ixlscore" target="_blank">Source Code</a>`;
+    console.log('Popup: Footer updated with version:', version);
 }
 
 function initDonutChart() {
