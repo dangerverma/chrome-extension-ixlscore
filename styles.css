@@ -16,8 +16,7 @@ body {
 h1 {
   color: #3498db; /* A shade of blue for the title */
   font-size: 1.3em;
-  margin-top: 15px;
-  margin-bottom: 20px;
+  margin-bottom: 10px;
   padding-bottom: 15px;
   border-bottom: 1px solid #34495e; /* Slightly lighter dark separator */
 }
@@ -64,8 +63,8 @@ h1 {
   border-radius: 8px; /* Rounded corners */
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2); /* Subtle shadow */
   position: relative;
-  width: 250px; /* Adjusted width to provide space for labels */
-  height: 250px; /* Reverted height to accommodate only the chart */
+  width: 280px; /* Increased width for larger chart */
+  height: 280px; /* Increased height for larger chart */
   margin: 20px auto; /* Center the container */
   box-sizing: border-box; /* Ensure consistent box model */
   display: flex;
@@ -95,21 +94,38 @@ h1 {
   text-align: center;
   padding: 20px;
   max-width: 300px;
+  margin: 20px;
+  background-color: #34495e; /* Darker background for emphasis - match other containers */
+  border-radius: 8px; /* Rounded corners - match other containers */
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2); /* Subtle shadow - match other containers */
 }
 
 #ixl-navigation-container h1 {
-  color: #007bff;
-  margin-bottom: 15px;
-  font-size: 1.5em;
-  border-bottom: 2px solid #007bff;
-  padding-bottom: 10px;
+  color: #3498db; /* Match general h1 color */
+  margin-top: 15px;
+  margin-bottom: 20px;
+  font-size: 1.3em; /* Match general h1 font size */
+  border-bottom: 1px solid #34495e; /* Match general h1 border */
+  padding-bottom: 15px; /* Match general h1 padding */
 }
 
 #ixl-navigation-container p {
-  color: #6c757d;
+  color: #bdc3c7; /* Lighter gray for better contrast on dark background */
   margin-bottom: 20px;
   font-size: 1em;
   line-height: 1.4;
+}
+
+#ixl-navigation-container ul {
+  color: #bdc3c7; /* Lighter gray for better contrast on dark background */
+  text-align: left;
+  margin: 10px 0;
+  padding-left: 20px;
+}
+
+#ixl-navigation-container li {
+  margin-bottom: 5px;
+  color: #bdc3c7; /* Lighter gray for better contrast on dark background */
 }
 
 .ixl-button {
@@ -138,6 +154,10 @@ h1 {
 
 /* Dark mode support for IXL navigation */
 @media (prefers-color-scheme: dark) {
+  #ixl-navigation-container {
+    background-color: #34495e; /* Keep consistent dark background */
+  }
+  
   #ixl-navigation-container h1 {
     color: var(--title-color-dark);
     border-bottom-color: var(--border-color-dark);
@@ -147,11 +167,16 @@ h1 {
     color: var(--label-color-dark);
   }
   
+  #ixl-navigation-container ul,
+  #ixl-navigation-container li {
+    color: var(--label-color-dark);
+  }
+  
   .ixl-button {
     background-color: #00aaff;
     box-shadow: 0 2px 4px rgba(0, 170, 255, 0.3);
-  }
-  
+}
+
   .ixl-button:hover {
     background-color: #0088cc;
     box-shadow: 0 4px 8px rgba(0, 170, 255, 0.4);

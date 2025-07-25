@@ -1,8 +1,8 @@
 // Constants
-const IXL_ANALYTICS_PATTERN = 'https://au.ixl.com/analytics/';
-const IXL_MATHS_PATTERN = 'https://au.ixl.com/maths';
-const IXL_ENGLISH_PATTERN = 'https://au.ixl.com/english';
-const IXL_SCIENCE_PATTERN = 'https://au.ixl.com/science';
+const IXL_ANALYTICS_PATTERN = '/analytics/progress-and-improvement';
+const IXL_MATHS_PATTERN = '/maths';
+const IXL_ENGLISH_PATTERN = '/english';
+const IXL_SCIENCE_PATTERN = '/science';
 const SKILL_EXERCISE_SELECTOR = 'span.skill-tree-skill-name';
 const IMPROVEMENT_CONTAINER_SELECTOR = '.improvement-container';
 const SCORE_SELECTOR = '.score';
@@ -27,10 +27,10 @@ const SCORE_SELECTORS = {
 const getPageType = () => {
   const url = window.location.href;
   console.log('Content script: Current URL:', url);
-  if (url.startsWith(IXL_ANALYTICS_PATTERN)) {
+  if (url.includes(IXL_ANALYTICS_PATTERN)) {
     console.log('Content script: Page type: analytics');
     return 'analytics';
-  } else if (url.startsWith(IXL_MATHS_PATTERN) || url.startsWith(IXL_ENGLISH_PATTERN) || url.startsWith(IXL_SCIENCE_PATTERN)) {
+  } else if (url.includes(IXL_MATHS_PATTERN) || url.includes(IXL_ENGLISH_PATTERN) || url.includes(IXL_SCIENCE_PATTERN)) {
     console.log('Content script: Page type: subject_skills');
     return 'subject_skills';
   }
@@ -70,6 +70,58 @@ const calculateAnalyticsScores = () => {
     gained: pointsGained.toString(),
     lost: pointsLost.toString()
   };
+};
+
+// Function to get subject name from page h1 element
+const getSubjectName = () => {
+  console.log('Content script: Getting subject name from page...');
+  
+  // Try to find h1 element under header or in common locations
+  let subjectName = '';
+  
+  // Method 1: Look for h1 under header element
+  const headerH1 = document.querySelector('header h1');
+  if (headerH1) {
+    subjectName = headerH1.textContent.trim();
+    console.log('Content script: Found subject name in header h1:', subjectName);
+  }
+  
+  // Method 2: Look for h1 with common subject-related classes
+  if (!subjectName) {
+    const subjectH1 = document.querySelector('h1[class*="subject"], h1[class*="title"], h1[class*="page-title"]');
+    if (subjectH1) {
+      subjectName = subjectH1.textContent.trim();
+      console.log('Content script: Found subject name in subject h1:', subjectName);
+    }
+  }
+  
+  // Method 3: Look for any h1 that might contain subject name
+  if (!subjectName) {
+    const allH1s = document.querySelectorAll('h1');
+    for (let h1 of allH1s) {
+      const text = h1.textContent.trim();
+      if (text && text.length > 0 && text.length < 50) { // Reasonable length for a subject name
+        subjectName = text;
+        console.log('Content script: Found subject name in general h1:', subjectName);
+        break;
+      }
+    }
+  }
+  
+  // Fallback: Use URL to determine subject
+  if (!subjectName) {
+    const url = window.location.href;
+    if (url.includes('/maths')) {
+      subjectName = 'Mathematics';
+    } else if (url.includes('/english')) {
+      subjectName = 'English';
+    } else if (url.includes('/science')) {
+      subjectName = 'Science';
+    }
+    console.log('Content script: Using fallback subject name:', subjectName);
+  }
+  
+  return subjectName;
 };
 
 // Function to calculate total exercises (for subject pages)
@@ -117,8 +169,13 @@ const calculateTotalExercises = () => {
   const notStartedExercises = (skillElements.length - completedExercises - inProgressExercises);
   console.log('Content script: Exercise data calculated:', { totalExercises: skillElements.length, completedExercises, inProgressExercises, notStartedExercises });
 
+  // Get subject name from the page
+  const subjectName = getSubjectName();
+  console.log('Content script: Subject name:', subjectName);
+
   return {
     type: 'exercise_data',
+    subjectName: subjectName,
     totalExercises: skillElements.length.toString(),
     completedExercises: completedExercises.toString(),
     inProgressExercises: inProgressExercises.toString(),
@@ -155,10 +212,10 @@ const isTargetPage = () => {
   // For content script, we use getPageType for more specific logic.
   const url = window.location.href;
   console.log('Content script: isTargetPage - Checking URL:', url);
-  const isAnalytics = url.startsWith(IXL_ANALYTICS_PATTERN);
-  const isMaths = url.startsWith(IXL_MATHS_PATTERN);
-  const isEnglish = url.startsWith(IXL_ENGLISH_PATTERN);
-  const isScience = url.startsWith(IXL_SCIENCE_PATTERN);
+  const isAnalytics = url.includes(IXL_ANALYTICS_PATTERN);
+  const isMaths = url.includes(IXL_MATHS_PATTERN);
+  const isEnglish = url.includes(IXL_ENGLISH_PATTERN);
+  const isScience = url.includes(IXL_SCIENCE_PATTERN);
   
   console.log(`Content script: isTargetPage - Analytics match: ${isAnalytics}, Maths match: ${isMaths}, English match: ${isEnglish}, Science match: ${isScience}`);
 

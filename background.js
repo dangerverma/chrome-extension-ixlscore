@@ -2,7 +2,7 @@
 console.log('IXL Score Extension background service worker active.');
 
 // Target URL pattern for the IXL analytics, maths, english, and science pages
-const TARGET_URL_PATTERN = 'https://au.ixl.com/(analytics/progress-and-improvement|maths|english|science)*';
+const TARGET_URL_PATTERN = 'https://.*\\.ixl\\.com/(analytics/progress-and-improvement|maths|english|science)';
 
 // Listen for tab updates
 chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
