@@ -267,9 +267,99 @@ function isTargetPage(url) {
     return isAnalytics || isMaths || isEnglish || isScience;
     }
 
+// Function to check if the extension is ready to score/count progress
+function isExtensionReady(tabUrl) {
+    console.log('Popup: Checking if extension is ready for URL:', tabUrl);
+    
+    // Check if we're on a target IXL page
+    if (!isTargetPage(tabUrl)) {
+        console.log('Popup: Not on a target IXL page - extension not ready');
+        return false;
+    }
+    
+    // Additional checks can be added here in the future
+    // For example, checking if the page has loaded completely
+    // or if specific elements are present
+    
+    console.log('Popup: Extension is ready for scoring/counting progress');
+    return true;
+}
+
+// Function to check if the extension is actively working (has data)
+function isExtensionActive() {
+    // Check if we have any valid data displayed
+    const scoreDisplay = document.getElementById('total-score-display');
+    const chartContainer = document.getElementById('donut-chart-container');
+    
+    // If either display is visible and not showing loading/error, extension is active
+    if (!scoreDisplay.classList.contains('hide')) {
+        const currentScore = document.getElementById('current-score');
+        if (currentScore && currentScore.textContent !== 'Loading...' && currentScore.textContent !== '0') {
+            return true;
+        }
+    }
+    
+    if (!chartContainer.classList.contains('hide')) {
+        // Chart is visible, check if it has data
+        if (chart && chart.getOption().series[0].data.length > 0) {
+            return true;
+        }
+    }
+    
+    return false;
+}
+
+// Function to update button state based on readiness
+function updateButtonState(isReady) {
+    console.log('Popup: Updating button state, isReady:', isReady);
+    
+    // Check if extension is actually active (has data)
+    const isActive = isExtensionActive();
+    const finalReadyState = isReady && isActive;
+    
+    if (finalReadyState) {
+        // Extension is ready and active - show active state
+        goToIxlButton.textContent = 'Extension Active - Viewing IXL Data';
+        goToIxlButton.disabled = true;
+        goToIxlButton.classList.add('disabled');
+        goToIxlButton.classList.remove('ready');
+    } else {
+        // Extension is not ready or not active - show inactive state
+        goToIxlButton.textContent = 'Go to IXL.com Website now';
+        goToIxlButton.disabled = false;
+        goToIxlButton.classList.remove('disabled');
+        goToIxlButton.classList.remove('ready');
+    }
+}
+
+// Function to update status message based on readiness
+function updateStatusMessage(isReady) {
+    const statusMessage = document.querySelector('.status-message');
+    if (statusMessage) {
+        // Check if extension is actually active (has data)
+        const isActive = isExtensionActive();
+        const finalReadyState = isReady && isActive;
+        
+        if (finalReadyState) {
+            statusMessage.textContent = 'Extension is active and tracking your progress!';
+            statusMessage.style.color = '#28a745'; // Green for active state
+            statusMessage.style.borderLeftColor = '#28a745';
+            statusMessage.style.backgroundColor = 'rgba(40, 167, 69, 0.1)';
+        } else {
+            statusMessage.textContent = 'Click the button below to navigate to IXL.com and start tracking your progress!';
+            statusMessage.style.color = '#f39c12'; // Orange for inactive state
+            statusMessage.style.borderLeftColor = '#f39c12';
+            statusMessage.style.backgroundColor = 'rgba(243, 156, 18, 0.1)';
+        }
+    }
+}
+
 // Function to navigate to IXL.com
 function navigateToIxl() {
-    chrome.tabs.create({ url: 'https://www.ixl.com' });
+    // Only navigate if the button is not disabled (i.e., extension is not ready)
+    if (!goToIxlButton.disabled) {
+        chrome.tabs.create({ url: 'https://www.ixl.com' });
+    }
 }
 
 // Add event listener for the IXL button
@@ -291,6 +381,13 @@ document.addEventListener('DOMContentLoaded', function() {
         console.log('Popup: Active tab queried:', activeTab);
         console.log('Popup: Tab URL:', activeTab.url);
         
+        // Check if the extension is ready
+        const isReady = isExtensionReady(activeTab.url);
+        
+        // Update button state based on readiness
+        updateButtonState(isReady);
+        updateStatusMessage(isReady);
+        
         // Check if we're on a target page
         if (isTargetPage(activeTab.url)) {
             console.log('Popup: On a target page.', activeTab.url);
@@ -304,6 +401,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (message.data) {
                     console.log('Popup: Processing data:', message.data);
                     updateDisplay(message.data);
+                    
+                    // If we received valid data, the extension is definitely ready
+                    if (message.data.type === 'score_data' || message.data.type === 'exercise_data') {
+                        updateButtonState(true);
+                        updateStatusMessage(true);
+                    }
                 } else {
                     console.log('Popup: No data in message');
                 }
@@ -313,16 +416,34 @@ document.addEventListener('DOMContentLoaded', function() {
             port.postMessage({action: 'getData'});
             console.log('Popup: Requested initial data from content script.');
             
+            // Set up periodic state check to keep button and status in sync
+            const stateCheckInterval = setInterval(() => {
+                if (port.onDisconnect) {
+                    // Port is still connected, update state
+                    const currentReady = isExtensionReady(activeTab.url);
+                    updateButtonState(currentReady);
+                    updateStatusMessage(currentReady);
+                } else {
+                    // Port disconnected, clear interval
+                    clearInterval(stateCheckInterval);
+                }
+            }, 2000); // Check every 2 seconds
+            
             // Also listen for port disconnection
             port.onDisconnect.addListener(function() {
                 console.log('Popup: Port disconnected');
+                // Clear the state check interval
+                clearInterval(stateCheckInterval);
+                // If port disconnects, extension might not be ready
+                updateButtonState(false);
+                updateStatusMessage(false);
             });
-      } else {
+        } else {
             console.log('Popup: Not on a target page.', activeTab.url);
             // Not on a target page - show navigation container
             totalScoreDisplay.classList.add('hide');
             donutChartContainer.classList.add('hide');
             ixlNavigationContainer.classList.remove('hide');
-      }
+        }
     });
 }); 

@@ -222,6 +222,49 @@ const isTargetPage = () => {
   return isAnalytics || isMaths || isEnglish || isScience;
 };
 
+// Function to check if the current page can actually calculate scores
+const canCalculateScoresOnPage = () => {
+  console.log('Content script: Checking if page can calculate scores...');
+  
+  const pageType = getPageType();
+  if (pageType === 'unknown') {
+    console.log('Content script: Page type unknown - cannot calculate scores');
+    return false;
+  }
+  
+  if (pageType === 'analytics') {
+    // Check if improvement containers exist
+    const improvementContainers = document.querySelectorAll(IMPROVEMENT_CONTAINER_SELECTOR);
+    const hasData = improvementContainers.length > 0;
+    console.log('Content script: Analytics page, has data:', hasData);
+    return hasData;
+  }
+  
+  if (pageType === 'subject_skills') {
+    // Check if skill elements exist
+    const skillElements = document.querySelectorAll(SKILL_EXERCISE_SELECTOR);
+    const hasData = skillElements.length > 0;
+    console.log('Content script: Subject skills page, has data:', hasData);
+    return hasData;
+  }
+  
+  return false;
+};
+
+// Function to notify background script about scoring capability
+const notifyBackgroundScript = (canScore) => {
+  chrome.runtime.sendMessage({
+    action: "updateIconState",
+    canScore: canScore
+  }).then(response => {
+    if (response && response.success) {
+      console.log('Content script: Successfully notified background script about scoring capability:', canScore);
+    }
+  }).catch(err => {
+    console.error('Content script: Failed to notify background script:', err);
+  });
+};
+
 // Function to send data to the background script (optional, keeping for structure)
 const sendDataToBackground = (data) => {
   chrome.runtime.sendMessage({
@@ -279,6 +322,14 @@ document.addEventListener('DOMContentLoaded', () => {
   console.log('Content script: DOMContentLoaded fired.');
   if (isTargetPage()) {
     console.log('IXL Score Extension: Content script loaded on target page.');
+    
+    // Check if we can actually calculate scores on this page
+    let canScore = canCalculateScoresOnPage();
+    console.log('Content script: Can calculate scores on this page:', canScore);
+    
+    // Notify background script about scoring capability
+    notifyBackgroundScript(canScore);
+    
     try {
       // Initial data calculation and send. This also covers the case where popup is not yet open.
       const initialData = getDataForPage();
@@ -293,6 +344,15 @@ document.addEventListener('DOMContentLoaded', () => {
       console.log('Content script: Setting up MutationObserver.');
       const observer = new MutationObserver((mutations) => {
         console.log('Content script: DOM mutations detected. Recalculating data.');
+        
+        // Check if scoring capability has changed
+        const newCanScore = canCalculateScoresOnPage();
+        if (newCanScore !== canScore) {
+          console.log('Content script: Scoring capability changed from', canScore, 'to', newCanScore);
+          canScore = newCanScore; // Update the variable
+          notifyBackgroundScript(newCanScore);
+        }
+        
         const newData = getDataForPage();
         // Only send updated data via port if popup is connected
         if (popupPort) {
@@ -311,9 +371,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
     } catch (error) {
       console.error('Content script: Error during initial setup or MutationObserver callback:', error);
+      // If there's an error, we probably can't calculate scores
+      notifyBackgroundScript(false);
     }
 
   } else {
     console.log('IXL Score Extension: Content script loaded, but not on a target page.');
+    // Notify background script that we can't calculate scores
+    notifyBackgroundScript(false);
   }
 }); 

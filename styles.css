@@ -128,6 +128,16 @@ h1 {
   color: #bdc3c7; /* Lighter gray for better contrast on dark background */
 }
 
+.status-message {
+  color: #f39c12; /* Orange color for status messages */
+  font-style: italic;
+  margin: 15px 0;
+  padding: 10px;
+  background-color: rgba(243, 156, 18, 0.1);
+  border-radius: 4px;
+  border-left: 3px solid #f39c12;
+}
+
 .ixl-button {
   background-color: #007bff;
   color: white;
@@ -150,6 +160,27 @@ h1 {
 .ixl-button:active {
   transform: translateY(0);
   box-shadow: 0 2px 4px rgba(0, 123, 255, 0.3);
+}
+
+/* Disabled button state - when extension is active and ready */
+.ixl-button.disabled {
+  background-color: #28a745; /* Green color to indicate active state */
+  color: white;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: 0 2px 4px rgba(40, 167, 69, 0.3);
+  opacity: 0.8;
+}
+
+.ixl-button.disabled:hover {
+  background-color: #28a745; /* Keep green on hover when disabled */
+  transform: none;
+  box-shadow: 0 2px 4px rgba(40, 167, 69, 0.3);
+}
+
+.ixl-button.disabled:active {
+  transform: none;
+  box-shadow: 0 2px 4px rgba(40, 167, 69, 0.3);
 }
 
 /* Dark mode support for IXL navigation */
@@ -184,6 +215,21 @@ h1 {
   
   .ixl-button:active {
     box-shadow: 0 2px 4px rgba(0, 170, 255, 0.3);
+  }
+  
+  /* Disabled button state for dark mode */
+  .ixl-button.disabled {
+    background-color: #28a745; /* Green color to indicate active state */
+    box-shadow: 0 2px 4px rgba(40, 167, 69, 0.3);
+  }
+  
+  .ixl-button.disabled:hover {
+    background-color: #28a745; /* Keep green on hover when disabled */
+    box-shadow: 0 2px 4px rgba(40, 170, 255, 0.3);
+  }
+  
+  .ixl-button.disabled:active {
+    box-shadow: 0 2px 4px rgba(40, 167, 69, 0.3);
   }
 }
 
